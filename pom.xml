@@ -22,9 +22,10 @@
         <developer/>
     </developers>
     <modules>
+        <module>time-series-db</module>
+        <module>taxi-trips-analytics-domain</module>
         <module>taxi-trips-analytics-core</module>
         <module>taxi-trips-analytics-rest</module>
-        <module>taxi-trips-analytics-domain</module>
     </modules>
     <!--    <scm>-->
     <!--		<connection/>-->
