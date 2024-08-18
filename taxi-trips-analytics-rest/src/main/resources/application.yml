@@ -1,0 +1,11 @@
+parquet:
+  file:
+    download:
+      location: classpath:dataset/taxitrips/trips_dats.parquet
+spring:
+  application:
+    name: taxi-trips-analytics-service
+
+logging:
+  level:
+    com.xyztaxicompany.analytics.trips: INFO
