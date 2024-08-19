@@ -1,17 +1,21 @@
 package com.xyztaxicompany.analytics.trips.controller;
 
+import com.xyztaxicompany.analytics.trips.exception.BizErrorCodeEnum;
 import com.xyztaxicompany.analytics.trips.service.TripAnalyticsService;
+import com.xyztaxicompany.analytics.trips.util.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -23,25 +27,58 @@ public class TripAnalyticsController {
     private TripAnalyticsService tripAnalyticsService;
 
     @GetMapping("/total_trips")
-    public ResponseEntity<Map> getTotalTrips(@RequestParam(value = "start") String startDateStr, @RequestParam(value = "end") String endDateStr) {
-        LocalDate startDate = LocalDate.parse(startDateStr, formatter);
-        LocalDate endDate = LocalDate.parse(endDateStr, formatter);
-        Map<String, Long> tripInfoMap = tripAnalyticsService.getTotalTrips(startDate, endDate);
-        return new ResponseEntity<>(tripInfoMap, HttpStatus.OK);
+    public ResponseResult getTotalTrips(@RequestParam(value = "start") String startDateStr, @RequestParam(value = "end") String endDateStr) {
+        try {
+            LocalDate startDate = DateUtils.getParsedLocalDate(startDateStr, formatter);
+            LocalDate endDate = DateUtils.getParsedLocalDate(endDateStr, formatter);
+            Map<String, Long> tripInfoMap = tripAnalyticsService.getTotalTrips(startDate, endDate);
+            List<Map<String, Object>> output = createOutput(tripInfoMap, "date", "total_trips");
+            return ResponseResult.success(output);
+        } catch (DateTimeParseException ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.BAD_DATA);
+        } catch (Exception ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.SYSTEM_ERROR);
+        }
     }
 
     @GetMapping("/average_speed_24hrs")
-    public ResponseEntity<Double> getAvgSpeed(@RequestParam(value = "date") String dateStr) {
-        LocalDate date = LocalDate.parse(dateStr, formatter);
-        Double avgSpeed = tripAnalyticsService.getAvgSpeedTrips(date);
-        return new ResponseEntity<>(avgSpeed, HttpStatus.OK);
+    public ResponseResult getAvgSpeed(@RequestParam(value = "date") String dateStr) {
+        try {
+            LocalDate date = DateUtils.getParsedLocalDate(dateStr, formatter);
+            Double avgSpeed = tripAnalyticsService.getAvgSpeedTrips(date);
+            Map<String, Object> singleEntryMap = new HashMap<>();
+            singleEntryMap.put("average_speed", avgSpeed);
+            return ResponseResult.success(singleEntryMap);
+        } catch (DateTimeParseException ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.BAD_DATA);
+        } catch (Exception ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.SYSTEM_ERROR);
+        }
     }
 
     @GetMapping("/average_fare_heatmap")
-    public ResponseEntity<Map> getAvgFareHeatMap(@RequestParam(value = "date") String dateStr) {
-        LocalDate date = LocalDate.parse(dateStr, formatter);
-        Map<String, Double> avgSpeed = tripAnalyticsService.getAvgFareHeatMap(date);
-        return new ResponseEntity<>(avgSpeed, HttpStatus.OK);
+    public ResponseResult getAvgFareHeatMap(@RequestParam(value = "date") String dateStr) {
+        try {
+            LocalDate date = DateUtils.getParsedLocalDate(dateStr, formatter);
+            Map<String, Double> avgSpeed = tripAnalyticsService.getAvgFareHeatMap(date);
+            List<Map<String, Object>> output = createOutput(avgSpeed, "s2Id", "fare");
+            return ResponseResult.success(output);
+        } catch (DateTimeParseException ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.BAD_DATA);
+        } catch (Exception ex) {
+            return ResponseResult.failure(BizErrorCodeEnum.SYSTEM_ERROR);
+        }
     }
 
+    private List<Map<String, Object>> createOutput(Map<String, ?> dataMap, String inputName, String valueName) {
+        return dataMap.entrySet()
+                .stream()
+                .map(entry -> {
+                    Map<String, Object> outputMapFormat = new HashMap<>();
+                    outputMapFormat.put(inputName, entry.getKey());
+                    outputMapFormat.put(valueName, entry.getValue());
+                    return outputMapFormat;
+                })
+                .collect(Collectors.toList());
+    }
 }
