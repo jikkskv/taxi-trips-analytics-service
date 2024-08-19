@@ -29,5 +29,13 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### jar file ###
+taxi-communication-service.jar
+
 ### VS Code ###
 .vscode/
+
+### Other ###
+mvnw
+mvnw.cmd
+taxi-trips-analytics-rest/src/main/resources/dataset/taxitrips/trips_dats.parquet
