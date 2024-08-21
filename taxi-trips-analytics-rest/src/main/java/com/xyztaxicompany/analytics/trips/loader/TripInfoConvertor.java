@@ -3,6 +3,7 @@ package com.xyztaxicompany.analytics.trips.loader;
 import com.google.common.geometry.S2CellId;
 import com.google.common.geometry.S2LatLng;
 import com.xyztaxicompany.analytics.trips.trips.TripInfo;
+import com.xyztaxicompany.analytics.trips.util.ValidationUtils;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
@@ -13,6 +14,7 @@ import org.apache.parquet.schema.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Objects;
 
 public class TripInfoConvertor extends GroupConverter {
 
@@ -82,7 +84,7 @@ public class TripInfoConvertor extends GroupConverter {
             case "trip_end_timestamp":
                 return new PrimitiveConverter() {
                     @Override
-                    public void addLong(long value) {   //TODO: data validation
+                    public void addLong(long value) {
                         tripInfoBuilder.tripEndTime(LocalDateTime.ofInstant(Instant.ofEpochMilli(value / 1000), UTC_ZONEID));
                     }
                 };
@@ -173,28 +175,28 @@ public class TripInfoConvertor extends GroupConverter {
                 return new PrimitiveConverter() {
                     @Override
                     public void addDouble(double value) {
-                        tripInfoBuilder.pickupLatitude(value);
+                        tripInfoBuilder.pickupLatitude(ValidationUtils.validateLatitude(value) ? value : 0D);
                     }
                 };
             case "pickup_longitude":
                 return new PrimitiveConverter() {
                     @Override
                     public void addDouble(double value) {
-                        tripInfoBuilder.pickupLongitude(value);
+                        tripInfoBuilder.pickupLongitude(ValidationUtils.validateLongitude(value) ? value : 0D);
                     }
                 };
             case "dropoff_latitude":
                 return new PrimitiveConverter() {
                     @Override
                     public void addDouble(double value) {
-                        tripInfoBuilder.dropoffLatitude(value);
+                        tripInfoBuilder.dropoffLatitude(ValidationUtils.validateLatitude(value) ? value : 0D);
                     }
                 };
             case "dropoff_longitude":
                 return new PrimitiveConverter() {
                     @Override
                     public void addDouble(double value) {
-                        tripInfoBuilder.dropoffLongitude(value);
+                        tripInfoBuilder.dropoffLongitude(ValidationUtils.validateLongitude(value) ? value : 0D);
                     }
                 };
             default:
@@ -221,6 +223,15 @@ public class TripInfoConvertor extends GroupConverter {
     }
 
     public TripInfo getCurrentRecord() {
+        if (Objects.isNull(tripInfo) || validateTripsData(tripInfo)) {
+            return null;
+        }
         return tripInfo;
+    }
+
+    private boolean validateTripsData(TripInfo tripInfo) {
+        boolean dataValidation = Objects.isNull(tripInfo.getTripEndTime()) || Objects.isNull(tripInfo.getTripStartTime()) || tripInfo.getTripEndTime().isBefore(tripInfo.getTripStartTime());
+        boolean secondValidation = tripInfo.getTripSeconds() > 0D;
+        return dataValidation && secondValidation;
     }
 }

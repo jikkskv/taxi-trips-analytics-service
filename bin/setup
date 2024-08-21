@@ -1,0 +1,23 @@
+#!/bin/bash
+
+
+# Function to download a file from Google Drive
+download_from_google_drive () {
+    DESTINATION_PATH=$1
+    # Using wget to download the file
+    wget --no-check-certificate 'https://drive.google.com/file/d/1QLBGFOoKw_3-iM58q4unWfwHmPqfnrYr' -O $DESTINATION_PATH
+}
+
+
+
+PARQUET_FILE_NAME="trips_dats.parquet"
+
+# Define destination directory
+DESTINATION_DIR="/taxi-trips-analytics-rest/src/main/resources/dataset/taxitrips"
+
+# Downloading the Parquet file
+echo "Download starting, proceeding with setup..."
+download_from_google_drive "$DESTINATION_DIR/$PARQUET_FILE_NAME"
+
+# You can continue with other setup steps here
+echo "Download complete, proceeding with setup..."

@@ -10,10 +10,12 @@ import org.springframework.stereotype.Service;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -34,12 +36,13 @@ public class TripAnalyticsServiceImpl implements TripAnalyticsService {
 
     @Override
     public Map<String, Long> getTotalTrips(LocalDate startDate, LocalDate endDate) {
-        if (Objects.isNull(endDate) || Objects.isNull(startDate) || endDate.compareTo(startDate) <= 0) {
+        if (Objects.isNull(endDate) || Objects.isNull(startDate) || endDate.compareTo(startDate) < 0) {
             return Collections.emptyMap();
         }
         final Predicate<TripInfo> filterFunction = (t) -> true;
         final Function<TripInfo, String> groupByFunction = (t) -> t.getTripStartTime().format(DATE_TIME_FORMATTER);
-        return (Map<String, Long>) timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(startDate.atStartOfDay(), endDate.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.COUNT, groupByFunction);
+        Map<String, Long> tripsData = (Map<String, Long>) timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(startDate.atStartOfDay(), endDate.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.COUNT, groupByFunction);
+        return new TreeMap<>(tripsData);
     }
 
     @Override
@@ -50,7 +53,7 @@ public class TripAnalyticsServiceImpl implements TripAnalyticsService {
         LocalDate pastDate = date.minusDays(1);
         final Predicate<TripInfo> filterFunction = (t) -> t.getTripSeconds() > 0 && t.getTripMiles() > 0;
         final Function<TripInfo, Double> aggregateFunction = (t) -> t.getTripMiles() / t.getTripSeconds();
-        Double milesPerSec = (Double) timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(pastDate.atStartOfDay(), date.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.AVG, aggregateFunction);
+        Double milesPerSec = (Double) timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(pastDate.atStartOfDay(), pastDate.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.AVG, aggregateFunction);
         return Double.parseDouble(DOUBLE_FORMAT.format(MILES_TO_KM_CONVERSION * milesPerSec));
     }
 
@@ -59,11 +62,13 @@ public class TripAnalyticsServiceImpl implements TripAnalyticsService {
         if (Objects.isNull(date)) {
             return Collections.emptyMap();
         }
-        final Predicate<TripInfo> filterFunction = (t) -> Objects.nonNull(t.getS2CellId());
+        LocalDate startDate = date.minusDays(2);
+        LocalDate past24HrDate = date.minusDays(1);
+        final Predicate<TripInfo> filterFunction = (t) -> Objects.nonNull(t.getS2CellId()) && t.getTripEndTime().isAfter(past24HrDate.atStartOfDay()) && t.getTripEndTime().isBefore(past24HrDate.atTime(LocalTime.MAX));
         final Function<TripInfo, String> groupByFunction = (t) -> t.getS2CellId().parent(S2_LEVEL).toToken();
         final Collector<TripInfo, ?, Double> aggregateFunction = Collectors.averagingDouble(TripInfo::getFare);
-        Map<String, Double> avgHeatMap = (Map<String, Double>) timeSeriesDataFetchService.getAllFlattenedDataWithGroupBy(date.atStartOfDay(), date.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.GROUP_BY, groupByFunction, aggregateFunction);
+        Map<String, Double> avgHeatMap = (Map<String, Double>) timeSeriesDataFetchService.getAllFlattenedDataWithGroupBy(startDate.atStartOfDay(), date.atStartOfDay(), DBTimeUnit.DAY, filterFunction, AggregateOperationEnum.GROUP_BY, groupByFunction, aggregateFunction);
         avgHeatMap.entrySet().forEach(e -> e.setValue(Double.parseDouble(DOUBLE_FORMAT.format(e.getValue()))));
-        return avgHeatMap;
+        return new TreeMap<>(avgHeatMap);
     }
 }

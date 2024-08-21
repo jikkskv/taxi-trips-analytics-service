@@ -11,10 +11,6 @@ public enum BizErrorCodeEnum implements ErrorCode {
     private int code;
     private String message;
 
-    BizErrorCodeEnum(final int code) {
-        this.code = code;
-    }
-
     BizErrorCodeEnum(final int code, final String message) {
         this.code = code;
         this.message = message;
