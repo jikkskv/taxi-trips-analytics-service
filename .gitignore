@@ -30,7 +30,7 @@ build/
 !**/src/test/**/build/
 
 ### jar file ###
-taxi-communication-service.jar
+taxi-trips-analytics-service.jar
 
 ### VS Code ###
 .vscode/
