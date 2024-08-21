@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.xyztaxicompany.analytics.trips</groupId>
-        <artifactId>taxi-trips-analytics-service-temp</artifactId>
+        <artifactId>taxi-trips-analytics-service</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 

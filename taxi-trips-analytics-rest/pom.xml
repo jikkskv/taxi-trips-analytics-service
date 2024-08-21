@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.xyztaxicompany.analytics.trips</groupId>
-        <artifactId>taxi-trips-analytics-service-temp</artifactId>
+        <artifactId>taxi-trips-analytics-service</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
@@ -64,9 +64,14 @@
             <artifactId>s2-geometry</artifactId>
             <version>2.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version>
+        </dependency>
     </dependencies>
     <build>
-        <finalName>taxi-communication-service</finalName>
+<!--        <finalName>trip-analytics-service</finalName>-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
