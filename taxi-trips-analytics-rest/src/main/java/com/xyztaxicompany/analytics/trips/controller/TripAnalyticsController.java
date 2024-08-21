@@ -2,7 +2,7 @@ package com.xyztaxicompany.analytics.trips.controller;
 
 import com.xyztaxicompany.analytics.trips.exception.BizErrorCodeEnum;
 import com.xyztaxicompany.analytics.trips.service.TripAnalyticsService;
-import com.xyztaxicompany.analytics.trips.util.DateUtils;
+import com.xyztaxicompany.analytics.trips.util.ValidationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +29,8 @@ public class TripAnalyticsController {
     @GetMapping("/total_trips")
     public ResponseResult getTotalTrips(@RequestParam(value = "start") String startDateStr, @RequestParam(value = "end") String endDateStr) {
         try {
-            LocalDate startDate = DateUtils.getParsedLocalDate(startDateStr, formatter);
-            LocalDate endDate = DateUtils.getParsedLocalDate(endDateStr, formatter);
+            LocalDate startDate = ValidationUtils.getValidatedLocalDate(startDateStr, formatter);
+            LocalDate endDate = ValidationUtils.getValidatedLocalDate(endDateStr, formatter);
             Map<String, Long> tripInfoMap = tripAnalyticsService.getTotalTrips(startDate, endDate);
             List<Map<String, Object>> output = createOutput(tripInfoMap, "date", "total_trips");
             return ResponseResult.success(output);
@@ -44,7 +44,7 @@ public class TripAnalyticsController {
     @GetMapping("/average_speed_24hrs")
     public ResponseResult getAvgSpeed(@RequestParam(value = "date") String dateStr) {
         try {
-            LocalDate date = DateUtils.getParsedLocalDate(dateStr, formatter);
+            LocalDate date = ValidationUtils.getValidatedLocalDate(dateStr, formatter);
             Double avgSpeed = tripAnalyticsService.getAvgSpeedTrips(date);
             Map<String, Object> singleEntryMap = new HashMap<>();
             singleEntryMap.put("average_speed", avgSpeed);
@@ -59,7 +59,7 @@ public class TripAnalyticsController {
     @GetMapping("/average_fare_heatmap")
     public ResponseResult getAvgFareHeatMap(@RequestParam(value = "date") String dateStr) {
         try {
-            LocalDate date = DateUtils.getParsedLocalDate(dateStr, formatter);
+            LocalDate date = ValidationUtils.getValidatedLocalDate(dateStr, formatter);
             Map<String, Double> avgSpeed = tripAnalyticsService.getAvgFareHeatMap(date);
             List<Map<String, Object>> output = createOutput(avgSpeed, "s2Id", "fare");
             return ResponseResult.success(output);

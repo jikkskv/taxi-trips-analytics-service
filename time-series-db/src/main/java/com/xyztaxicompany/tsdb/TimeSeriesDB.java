@@ -19,7 +19,6 @@ public class TimeSeriesDB<T> {
     public static final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
     private final Map<Integer, Map> dataBase;
 
-
     private final Collector<T, ?, Double> noOpCollector = Collector.of(
             () -> 0D,                  // Supplier: Initial value
             (acc, item) -> {
@@ -134,7 +133,7 @@ public class TimeSeriesDB<T> {
             case MONTH ->
                     dataMap.stream().parallel().flatMap(e1 -> flatStreamFun.apply(e1)).flatMap(e2 -> flatStreamFun.apply((Map<Integer, Map>) e2)).flatMap(e3 -> flatStreamFun.apply((Map<Integer, Map>) e3));
             case YEAR ->
-                    dataMap.stream().parallel().flatMap(e1 -> flatStreamFun.apply(e1)).flatMap(e2 -> flatStreamFun.apply((Map<Integer, Map>) e2)).flatMap(e3 -> flatStreamFun.apply((Map<Integer, Map>) e3));
+                    dataMap.stream().parallel().flatMap(e1 -> flatStreamFun.apply(e1)).flatMap(e2 -> flatStreamFun.apply((Map<Integer, Map>) e2)).flatMap(e3 -> flatStreamFun.apply((Map<Integer, Map>) e3)).flatMap(e4 -> flatStreamFun.apply((Map<Integer, Map>) e4));
             default -> Stream.empty();
         };
     }
@@ -150,18 +149,66 @@ public class TimeSeriesDB<T> {
     }
 
     private List<Map<Integer, Map>> getDataMapForHour(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Map<Integer, Map>> dataMapListAtDay = getDataMapForMonth(startDate, endDate);
-        return dataMapListAtDay.stream().flatMap(dayMap -> IntStream.range(startDate.getHour(), endDate.getHour() + 1).mapToObj(e -> (Map<Integer, Map>) dayMap.getOrDefault(e, Collections.emptyMap())).toList().stream()).toList();
+        List<Map<Integer, Map>> dataMapListAtDay = getDataMapForDay(startDate, endDate);
+        if (dataMapListAtDay.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Map<Integer, Map>> dataMapList = new ArrayList<>();
+        if (startDate.getDayOfMonth() == endDate.getDayOfMonth()) {
+            dataMapList.addAll(dataMapListAtDay.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getHour() && e.getKey() <= endDate.getHour()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+            return dataMapList;
+        } else {
+            dataMapList.addAll(dataMapListAtDay.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getHour()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        if (dataMapListAtDay.size() > 2) {
+            IntStream.range(1, dataMapListAtDay.size() - 1).mapToObj(e -> dataMapListAtDay.get(e)).flatMap(e -> e.values().parallelStream()).forEach(d -> dataMapList.add((Map<Integer, Map>) d));
+        }
+        if (dataMapListAtDay.size() > 1) {
+            dataMapList.addAll(dataMapListAtDay.get(dataMapListAtDay.size() - 1).entrySet().stream().filter(e -> e.getKey() <= endDate.getHour()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        return dataMapList;
     }
 
     private List<Map<Integer, Map>> getDataMapForDay(LocalDateTime startDate, LocalDateTime endDate) {
         List<Map<Integer, Map>> dataMapListAtMonth = getDataMapForMonth(startDate, endDate);
-        return dataMapListAtMonth.stream().flatMap(monthMap -> IntStream.range(startDate.getDayOfMonth(), endDate.getDayOfMonth() + 1).mapToObj(e -> (Map<Integer, Map>) monthMap.getOrDefault(e, Collections.emptyMap())).toList().stream()).toList();
+        if (dataMapListAtMonth.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Map<Integer, Map>> dataMapList = new ArrayList<>();
+        if (startDate.getMonthValue() == endDate.getMonthValue()) {
+            dataMapList.addAll(dataMapListAtMonth.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getDayOfMonth() && e.getKey() <= endDate.getDayOfMonth()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+            return dataMapList;
+        } else {
+            dataMapList.addAll(dataMapListAtMonth.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getDayOfMonth()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        if (dataMapListAtMonth.size() > 2) {
+            IntStream.range(1, dataMapListAtMonth.size() - 1).mapToObj(e -> dataMapListAtMonth.get(e)).flatMap(e -> e.values().parallelStream()).forEach(d -> dataMapList.add((Map<Integer, Map>) d));
+        }
+        if (dataMapListAtMonth.size() > 1) {
+            dataMapList.addAll(dataMapListAtMonth.get(dataMapListAtMonth.size() - 1).entrySet().stream().filter(e -> e.getKey() <= endDate.getDayOfMonth()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        return dataMapList;
     }
 
     private List<Map<Integer, Map>> getDataMapForMonth(LocalDateTime startDate, LocalDateTime endDate) {
         List<Map<Integer, Map>> dataMapListAtYear = getDataMapForYear(startDate, endDate);
-        return dataMapListAtYear.stream().flatMap(yearMap -> IntStream.range(startDate.getMonthValue(), endDate.getMonthValue() + 1).mapToObj(e -> (Map<Integer, Map>) yearMap.getOrDefault(e, Collections.emptyMap())).toList().stream()).toList();
+        if (dataMapListAtYear == null || dataMapListAtYear.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Map<Integer, Map>> dataMapList = new ArrayList<>();
+        if (startDate.getYear() == endDate.getYear()) {
+            dataMapList.addAll(dataMapListAtYear.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getMonthValue() && e.getKey() <= endDate.getMonthValue()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+            return dataMapList;
+        } else {
+            dataMapList.addAll(dataMapListAtYear.get(0).entrySet().stream().filter(e -> e.getKey() >= startDate.getMonthValue()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        if (dataMapListAtYear.size() > 2) {
+            IntStream.range(1, dataMapListAtYear.size() - 2).mapToObj(e -> dataMapListAtYear.get(e)).flatMap(e -> e.values().parallelStream()).forEach(d -> dataMapList.add((Map<Integer, Map>) d));
+        }
+        if (dataMapListAtYear.size() > 1) {
+            dataMapList.addAll(dataMapListAtYear.get(dataMapListAtYear.size() - 1).entrySet().stream().filter(e -> e.getKey() <= endDate.getMonthValue()).map(e -> (Map<Integer, Map>) e.getValue()).toList());
+        }
+        return dataMapList;
     }
 
     private List<Map<Integer, Map>> getDataMapForYear(LocalDateTime startDate, LocalDateTime endDate) {
