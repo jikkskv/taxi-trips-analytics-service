@@ -1,23 +1,27 @@
 #!/bin/bash
 
-
-# Function to download a file from Google Drive
-download_from_google_drive () {
-    DESTINATION_PATH=$1
-    # Using wget to download the file
-    wget --no-check-certificate 'https://drive.google.com/file/d/1QLBGFOoKw_3-iM58q4unWfwHmPqfnrYr' -O $DESTINATION_PATH
-}
-
-
-
+# Define destination directory
+FILE_ID="1QLBGFOoKw_3-iM58q4unWfwHmPqfnrYr"
+DESTINATION_DIR="./datasets/taxitrips/"
 PARQUET_FILE_NAME="trips_dats.parquet"
 
-# Define destination directory
-DESTINATION_DIR="/taxi-trips-analytics-rest/src/main/resources/dataset/taxitrips"
-
 # Downloading the Parquet file
-echo "Download starting, proceeding with setup..."
-download_from_google_drive "$DESTINATION_DIR/$PARQUET_FILE_NAME"
+echo "Download of ${PARQUET_FILE_NAME} starting..."
 
-# You can continue with other setup steps here
-echo "Download complete, proceeding with setup..."
+# Step 1: Get the confirmation token
+CONFIRM_TOKEN=$(curl -sc /tmp/gcookie "https://drive.usercontent.google.com/download?export=download&authuser=0&id=${FILE_ID}" | awk '/_warning_/ {print $NF}')
+
+# Step 2: Use the confirmation token to download the file
+curl -kLb /tmp/gcookie "https://drive.usercontent.google.com/download?export=download&authuser=0&confirm=${CONFIRM_TOKEN}&id=${FILE_ID}" -o${DESTINATION_DIR}/${PARQUET_FILE_NAME}
+echo "Download completed, proceeding with setup..."
+
+mvn -f ./pom.xml clean install
+#mvn -f ./pom.xml test verify
+
+echo -e "\n>>>>>>>>mvn clean install completed<<<<<<<<"
+echo -e "\n>>>>>>>>mvn test verify completed<<<<<<<<"
+
+echo -e "\n\n\n>>>>>>>>Code Coverage Report<<<<<<<<"
+echo -e "===================================="
+echo -e "===================================="
+awk -F, '{ instructions += $4 + $5; covered += $5 } END { print covered, "/", instructions, " instructions covered"; print 100*covered/instructions, "% covered" }' ./coverage-module/target/site/jacoco-aggregate/jacoco.csv

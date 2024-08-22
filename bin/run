@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Check if a port number is provided
+if [ -z "$1" ]; then
+  PORT=8080
+else
+  PORT=$1
+fi
+
+# Set the port number
+
+echo -e "\n>>>>>>>>Starting Trip Analytics Service on port : ${PORT}"
+# Run the Spring Boot application with the specified port
+#./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=$PORT
+
+java -jar -Dserver.port=$PORT ./trip-analytics-service.jar

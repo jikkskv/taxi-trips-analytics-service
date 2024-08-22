@@ -24,6 +24,11 @@ public class TripInfoConvertor extends GroupConverter {
     private TripInfo tripInfo;
     private String[] schemaFields;
 
+    public TripInfoConvertor(TripInfo.TripInfoBuilder tripInfoBuilder, MessageType messageType) {
+        this.tripInfoBuilder = tripInfoBuilder;
+        this.schemaFields = messageType.getFields().stream().map(Type::getName).toArray(String[]::new);
+    }
+
     public TripInfoConvertor(MessageType messageType) {
         schemaFields = messageType.getFields().stream().map(Type::getName).toArray(String[]::new);
     }
@@ -229,9 +234,13 @@ public class TripInfoConvertor extends GroupConverter {
         return tripInfo;
     }
 
-    private boolean validateTripsData(TripInfo tripInfo) {
+    public boolean validateTripsData(TripInfo tripInfo) {
         boolean dataValidation = Objects.isNull(tripInfo.getTripEndTime()) || Objects.isNull(tripInfo.getTripStartTime()) || tripInfo.getTripEndTime().isBefore(tripInfo.getTripStartTime());
         boolean secondValidation = tripInfo.getTripSeconds() > 0D;
         return dataValidation && secondValidation;
+    }
+
+    public void setSchemaFields(String[] schemaFields) {
+        this.schemaFields = schemaFields;
     }
 }
