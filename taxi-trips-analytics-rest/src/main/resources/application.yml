@@ -1,7 +1,10 @@
+server:
+  port: 8080
+
 parquet:
   file:
     download:
-      location: classpath:dataset/taxitrips/trips_dats.parquet
+      location: file:./datasets/taxitrips/trips_dats.parquet
 spring:
   application:
     name: taxi-trips-analytics-service
@@ -9,3 +12,6 @@ spring:
 logging:
   level:
     com.xyztaxicompany.analytics.trips: INFO
+
+s2cellId:
+  level: 16

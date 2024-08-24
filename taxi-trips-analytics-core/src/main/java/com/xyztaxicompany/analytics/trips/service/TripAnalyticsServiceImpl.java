@@ -5,6 +5,7 @@ import com.xyztaxicompany.analytics.trips.trips.TripInfo;
 import com.xyztaxicompany.tsdb.AggregateOperationEnum;
 import com.xyztaxicompany.tsdb.DBTimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
@@ -29,7 +30,9 @@ public class TripAnalyticsServiceImpl implements TripAnalyticsService {
     private static final double MILES_TO_KM_CONVERSION = 1.60934 * 3600;
 
     private static final NumberFormat DOUBLE_FORMAT = new DecimalFormat("#0.00");
-    public static final int S2_LEVEL = 16;
+
+    @Value("${s2cellId.level:16}")
+    public int S2_LEVEL;
 
     @Autowired
     private TimeSeriesDataFetchService<TripInfo> timeSeriesDataFetchService;

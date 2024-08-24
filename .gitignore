@@ -30,7 +30,7 @@ build/
 !**/src/test/**/build/
 
 ### jar file ###
-taxi-trips-analytics-service.jar
+/taxi-trips-analytics-service.jar
 
 ### VS Code ###
 .vscode/
@@ -39,3 +39,5 @@ taxi-trips-analytics-service.jar
 mvnw
 mvnw.cmd
 taxi-trips-analytics-rest/src/main/resources/dataset/taxitrips/trips_dats.parquet
+/trip-analytics-service.jar
+/datasets/taxitrips/trips_dats.parquet
