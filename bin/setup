@@ -25,3 +25,4 @@ echo -e "\n\n\n>>>>>>>>Code Coverage Report<<<<<<<<"
 echo -e "===================================="
 echo -e "===================================="
 awk -F, '{ instructions += $4 + $5; covered += $5 } END { print covered, "/", instructions, " instructions covered"; print 100*covered/instructions, "% covered" }' ./coverage-module/target/site/jacoco-aggregate/jacoco.csv
+echo -e "\n\n Please find the detailed test case report: http://localhost:63342/taxi-trips-analytics-service/coverage-module/target/site/jacoco-aggregate/index.html"
