@@ -41,3 +41,4 @@ mvnw.cmd
 taxi-trips-analytics-rest/src/main/resources/dataset/taxitrips/trips_dats.parquet
 /trip-analytics-service.jar
 /datasets/taxitrips/trips_dats.parquet
+/.mvn/wrapper/maven-wrapper.properties
