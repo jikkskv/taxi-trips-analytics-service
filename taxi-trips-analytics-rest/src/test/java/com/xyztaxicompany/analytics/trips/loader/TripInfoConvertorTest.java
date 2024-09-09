@@ -16,8 +16,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -104,7 +103,7 @@ class TripInfoConvertorTest {
         tripInfoConvertor.start();
         tripInfoConvertor.end();
         TripInfo tripInfo = tripInfoConvertor.getCurrentRecord();
-        assertNotNull(tripInfo);
+        assertNull(tripInfo);
         // Verify further as necessary
     }
 
@@ -122,7 +121,7 @@ class TripInfoConvertorTest {
                 .tripEndTime(LocalDateTime.now().minusHours(1))
                 .tripSeconds(-10.0)
                 .build();
-//        assertTrue(tripInfoConvertor.validateTripsData(invalidTripInfo));
+        assertTrue(tripInfoConvertor.validateTripsData(invalidTripInfo));
     }
 
     @Test

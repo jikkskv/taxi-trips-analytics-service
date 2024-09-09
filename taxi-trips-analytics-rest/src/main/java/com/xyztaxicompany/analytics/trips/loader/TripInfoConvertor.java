@@ -235,9 +235,9 @@ public class TripInfoConvertor extends GroupConverter {
     }
 
     public boolean validateTripsData(TripInfo tripInfo) {
-        boolean dataValidation = Objects.isNull(tripInfo.getTripEndTime()) || Objects.isNull(tripInfo.getTripStartTime()) || tripInfo.getTripEndTime().isBefore(tripInfo.getTripStartTime());
-        boolean secondValidation = tripInfo.getTripSeconds() > 0D;
-        return dataValidation && secondValidation;
+        boolean invalidTripTime = Objects.isNull(tripInfo.getTripEndTime()) || Objects.isNull(tripInfo.getTripStartTime()) || tripInfo.getTripEndTime().isBefore(tripInfo.getTripStartTime());
+        boolean invalidTripSeconds = (tripInfo.getTripSeconds() <= 0D);
+        return invalidTripTime || invalidTripSeconds;
     }
 
     public void setSchemaFields(String[] schemaFields) {
