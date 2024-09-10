@@ -5,6 +5,5 @@ public enum DBTimeUnit {
     MONTH,
     DAY,
     HOUR,
-    MINUTE,
-    SECONDS
+    LOCAL_DATE_TIME,
 }

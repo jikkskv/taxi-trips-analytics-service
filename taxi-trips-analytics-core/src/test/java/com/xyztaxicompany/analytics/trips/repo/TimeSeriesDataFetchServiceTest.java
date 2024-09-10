@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TimeSeriesDataFetchServiceTest {
 
+    public static final Function<TripInfo, LocalDateTime> GET_TRIP_START_TIME_FUN = TripInfo::getTripStartTime;
+
     @Mock
     private TimeSeriesDB<TripInfo> timeSeriesDB;
 
@@ -37,8 +39,8 @@ class TimeSeriesDataFetchServiceTest {
     @Test
     void testPushData() {
         TripInfo tripInfo = TripInfo.builder().build();
-        timeSeriesDataFetchService.pushData(List.of(tripInfo), TripInfo::getTripStartTime);
-        timeSeriesDataFetchService.pushData(tripInfo, TripInfo::getTripStartTime);
+        timeSeriesDataFetchService.pushData(List.of(tripInfo), GET_TRIP_START_TIME_FUN);
+        timeSeriesDataFetchService.pushData(tripInfo, GET_TRIP_START_TIME_FUN);
     }
 
     @Test
@@ -54,7 +56,7 @@ class TimeSeriesDataFetchServiceTest {
         List<TripInfo> list = new ArrayList<>();
         LocalDateTime startDateTime = LocalDateTime.now();
         when(timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(eq(startDateTime), eq(startDateTime), eq(DBTimeUnit.DAY), any(Predicate.class), any(AggregateOperationEnum.class), any(Function.class))).thenReturn(list);
-        assertEquals(list, timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(startDateTime, startDateTime, DBTimeUnit.DAY, (TripInfo t) -> true, AggregateOperationEnum.AVG, TripInfo::getTripStartTime));
+        assertEquals(list, timeSeriesDataFetchService.getAllFlattenedDataWithAggregate(startDateTime, startDateTime, DBTimeUnit.DAY, (TripInfo t) -> true, AggregateOperationEnum.AVG, GET_TRIP_START_TIME_FUN));
     }
 
     @Test
@@ -62,6 +64,6 @@ class TimeSeriesDataFetchServiceTest {
         List<TripInfo> list = new ArrayList<>();
         LocalDateTime startDateTime = LocalDateTime.now();
         when(timeSeriesDataFetchService.getAllFlattenedDataWithGroupBy(eq(startDateTime), eq(startDateTime), eq(DBTimeUnit.DAY), any(Predicate.class), any(AggregateOperationEnum.class), any(Function.class), any(Collector.class))).thenReturn(list);
-        assertEquals(list, timeSeriesDataFetchService.getAllFlattenedDataWithGroupBy(startDateTime, startDateTime, DBTimeUnit.DAY, (TripInfo t) -> true, AggregateOperationEnum.AVG, TripInfo::getTripStartTime, Collectors.averagingDouble(TripInfo::getFare)));
+        assertEquals(list, timeSeriesDataFetchService.getAllFlattenedDataWithGroupBy(startDateTime, startDateTime, DBTimeUnit.DAY, (TripInfo t) -> true, AggregateOperationEnum.AVG, GET_TRIP_START_TIME_FUN, Collectors.averagingDouble(TripInfo::getFare)));
     }
 }

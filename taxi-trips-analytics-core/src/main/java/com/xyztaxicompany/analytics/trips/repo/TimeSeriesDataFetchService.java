@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 public class TimeSeriesDataFetchService<T> implements DataFetchService<T> {
@@ -31,6 +32,16 @@ public class TimeSeriesDataFetchService<T> implements DataFetchService<T> {
     @Override
     public List<T> getAllFlattenedData(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit) {
         return timeSeriesDB.getAllFlattenedData(startDate, endDate, timeUnit);
+    }
+
+    @Override
+    public List<T> getAllFlattenedDataWithFilterCondition(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction) {
+        return timeSeriesDB.getAllFlattenedDataWithFilterCondition(startDate, endDate, timeUnit, filterFunction);
+    }
+
+    @Override
+    public Number getAllFlattenedDataWithFilterAndAggregate(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction, Collector<T, ?, ? extends Number> aggregateFunction) {
+        return timeSeriesDB.getAllFlattenedDataWithFilterAndAggregate(startDate, endDate, timeUnit, filterFunction, Collectors.counting());
     }
 
     @Override

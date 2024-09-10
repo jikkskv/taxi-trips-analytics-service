@@ -19,6 +19,12 @@ class AggregateFunctionsTest {
     }
 
     @Test
+    void applyAggregateFunction_sampleTest() {
+        Number count = AggregateFunctions.applyAggregateFunction(Stream.of(1, 1, 2, 2, 2, 3), Collectors.counting());
+        assertEquals(6L, count.longValue());
+    }
+
+    @Test
     void applyAvgFunction() {
         Double aDouble = AggregateFunctions.applyAvgFunction(Stream.of(1, 2, 2, 2, 3), (Integer a) -> a);
         assertEquals(2, aDouble);
