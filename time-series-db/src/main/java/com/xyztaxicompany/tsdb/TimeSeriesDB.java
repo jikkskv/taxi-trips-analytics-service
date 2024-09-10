@@ -94,22 +94,32 @@ public class TimeSeriesDB<T> {
     }
 
     public List<T> getAllFlattenedData(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit) {
-        List<Map<Integer, Map>> dataMap = getDataForTimeUnit(startDate, endDate, timeUnit);
-        Stream<List<T>> stream = (Stream<List<T>>) applyFlatStream(dataMap, timeUnit);
-        return stream.parallel().flatMap(Collection::stream).toList();
+        Stream<List<T>> flattenedData = getFlattenedStream(startDate, endDate, timeUnit);
+        return flattenedData.parallel().flatMap(Collection::stream).toList();
     }
 
+    public List<T> getAllFlattenedDataWithFilterCondition(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction) {
+        Stream<List<T>> flattenedData = getFlattenedStream(startDate, endDate, timeUnit);
+        return flattenedData.parallel().flatMap(Collection::stream).filter(e -> filterFunction.test(e)).toList();
+    }
+
+    public Number getAllFlattenedDataWithFilterAndAggregate(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction, Collector<T, ?, ? extends Number> aggregateFunction) {
+        Stream<List<T>> flattenedData = getFlattenedStream(startDate, endDate, timeUnit);
+        Stream<T> TList =  flattenedData.parallel().flatMap(Collection::stream).filter(e -> filterFunction.test(e));
+        Object aggregatedOutput = applyAggregateFunction(TList, aggregateFunction);
+        return (Number) aggregatedOutput;
+    }
+
+
     public Object getAllFlattenedDataWithAggregate(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction, AggregateOperationEnum aggregateOperationEnum, Function<T, ?> groupByFunction) {
-        List<Map<Integer, Map>> dataMap = getDataForTimeUnit(startDate, endDate, timeUnit);
-        Stream<List<T>> flattenedData = (Stream<List<T>>) applyFlatStream(dataMap, timeUnit);
+        Stream<List<T>> flattenedData = getFlattenedStream(startDate, endDate, timeUnit);
         Stream<T> TList = flattenedData.flatMap(e -> e.stream()).filter(e -> filterFunction.test(e));
         Object aggregatedOutput = applyAggregateFunction(TList, aggregateOperationEnum, groupByFunction, noOpCollector);
         return aggregatedOutput;
     }
 
     public Object getAllFlattenedDataWithGroupBy(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit, Predicate<T> filterFunction, AggregateOperationEnum aggregateOperationEnum, Function<T, ?> groupByFunction, Collector<T, ?, Double> aggregateFunction) {
-        List<Map<Integer, Map>> dataMap = getDataForTimeUnit(startDate, endDate, timeUnit);
-        Stream<List<T>> flattenedData = (Stream<List<T>>) applyFlatStream(dataMap, timeUnit);
+        Stream<List<T>> flattenedData = getFlattenedStream(startDate, endDate, timeUnit);
         Stream<T> TList = flattenedData.flatMap(e -> e.stream()).filter(e -> filterFunction.test(e));
         Object aggregatedOutput = applyAggregateFunction(TList, aggregateOperationEnum, groupByFunction, aggregateFunction);
         return aggregatedOutput;
@@ -122,6 +132,10 @@ public class TimeSeriesDB<T> {
             case GROUP_BY ->
                     AggregateFunctions.applyGroupByAggregateFunction(stream, groupByFunction, aggregateFunction);
         };
+    }
+
+    private Object applyAggregateFunction(Stream<T> stream, Collector<T, ?, ? extends Number> aggregateFunction) {
+        return AggregateFunctions.applyAggregateFunction(stream, aggregateFunction);
     }
 
     private Stream<T> applyFlatStream(List<Map<Integer, Map>> dataMap, DBTimeUnit timeUnit) {
@@ -146,6 +160,37 @@ public class TimeSeriesDB<T> {
             case HOUR -> getDataMapForHour(startDate, endDate);
             default -> Collections.emptyList();
         };
+    }
+
+    private Stream<List<T>> getFlattenedStream(LocalDateTime startDate, LocalDateTime endDate, DBTimeUnit timeUnit) {
+        if (DBTimeUnit.LOCAL_DATE_TIME.equals(timeUnit)) {
+            return getDataForLocalDateTime(startDate, endDate);
+        }
+        List<Map<Integer, Map>> dataMap = getDataForTimeUnit(startDate, endDate, timeUnit);
+        Stream<List<T>> flattenedData = (Stream<List<T>>) applyFlatStream(dataMap, timeUnit);
+        return flattenedData;
+    }
+
+    private Stream<List<T>> getDataForLocalDateTime(LocalDateTime startDate, LocalDateTime endDate) {
+        List dataMapForHour = getDataMapForHour(startDate, endDate);
+        if (dataMapForHour.isEmpty()) {
+            return Stream.empty();
+        }
+        long startDateTimeStampDiff = startDate.toInstant(ZONE_OFFSET.UTC).toEpochMilli() - startDate.withMinute(0).withSecond(0).withNano(0).toInstant(ZONE_OFFSET).toEpochMilli();
+        long endDateTimeStampDiff = endDate.toInstant(ZONE_OFFSET.UTC).toEpochMilli() - endDate.withMinute(0).withSecond(0).withNano(0).toInstant(ZONE_OFFSET).toEpochMilli();
+        Stream<List<T>> stream = Stream.<List<T>>builder().build();
+        if (startDate.getHour() == endDate.getHour()) {
+            stream = Stream.concat(stream, ((ConcurrentSkipListMap<Long, List<T>>) dataMapForHour.get(0)).tailMap(startDateTimeStampDiff, true).headMap(endDateTimeStampDiff, true).values().stream());
+        } else {
+            stream = Stream.concat(stream, ((ConcurrentSkipListMap<Long, List<T>>) dataMapForHour.get(0)).tailMap(startDateTimeStampDiff, true).values().stream());
+        }
+        if (dataMapForHour.size() > 2) {
+            stream = Stream.concat(stream, IntStream.range(1, dataMapForHour.size() - 1).mapToObj(e -> ((ConcurrentSkipListMap<Long, List<T>>) dataMapForHour.get(e))).flatMap(e -> e.values().parallelStream()));
+        }
+        if (dataMapForHour.size() > 1) {
+            stream = Stream.concat(stream, ((ConcurrentSkipListMap<Long, List<T>>) dataMapForHour.get(dataMapForHour.size() - 1)).headMap(endDateTimeStampDiff, true).values().stream());
+        }
+        return stream;
     }
 
     private List<Map<Integer, Map>> getDataMapForHour(LocalDateTime startDate, LocalDateTime endDate) {

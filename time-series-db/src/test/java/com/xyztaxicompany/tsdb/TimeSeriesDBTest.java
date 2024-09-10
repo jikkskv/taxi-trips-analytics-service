@@ -32,10 +32,10 @@ class TimeSeriesDBTest {
             new Person(3, "name_3", LocalDate.of(2020, 1, 21).atStartOfDay(), 45.48),
             new Person(4, "name_4", LocalDate.of(2020, 2, 1).atStartOfDay(), 75.57),
             new Person(5, "name_5", LocalDate.of(2020, 3, 1).atStartOfDay(), 15.69),
-            new Person(6, "name_6", LocalDateTime.of(2020, 4, 5, 13, 30), 15.84),
-            new Person(7, "name_7", LocalDateTime.of(2020, 4, 14, 13, 50), 18.62),
-            new Person(8, "name_8", LocalDateTime.of(2020, 7, 17, 14, 50), 12.17),
-            new Person(9, "name_9", LocalDateTime.of(2020, 8, 24, 15, 50), 19.25)
+            new Person(6, "name_6", LocalDateTime.of(2020, 4, 5, 13, 30, 12), 15.84),
+            new Person(7, "name_7", LocalDateTime.of(2020, 4, 14, 13, 50, 12), 18.62),
+            new Person(8, "name_8", LocalDateTime.of(2020, 7, 17, 14, 50, 12), 12.17),
+            new Person(9, "name_9", LocalDateTime.of(2020, 8, 24, 15, 50, 12), 19.25)
     );
 
     @BeforeAll
@@ -51,6 +51,22 @@ class TimeSeriesDBTest {
         List<Person> outputList = timeSeriesDBTemp.getAllFlattenedData(LocalDate.of(2020, 1, 12).atStartOfDay(), LocalDate.of(2020, 1, 21).atStartOfDay(), DBTimeUnit.DAY);
         assertNotNull(outputList);
         assertTrue(outputList.isEmpty());
+    }
+
+    @Test
+    void getAllFlattenedDataWithFilterCondition() {
+        List<Person> outputList = timeSeriesDB.getAllFlattenedDataWithFilterCondition(LocalDate.of(2020, 1, 12).atStartOfDay(), LocalDate.of(2020, 1, 21).atStartOfDay(), DBTimeUnit.DAY, (Person p)-> p.getAge()>26);
+        assertNotNull(outputList);
+        assertFalse(outputList.isEmpty());
+        Set<String> nameSet = outputList.stream().map(e -> e.name).collect(Collectors.toSet());
+        assertEquals(1, nameSet.size());
+        assertTrue(nameSet.contains("name_3"));
+    }
+
+    @Test
+    void getAllFlattenedDataWithFilterAndAggregate() {
+        Number count = timeSeriesDB.getAllFlattenedDataWithFilterAndAggregate(LocalDate.of(2020, 1, 12).atStartOfDay(), LocalDate.of(2020, 1, 21).atStartOfDay(), DBTimeUnit.DAY, (Person p)-> true, Collectors.counting());
+        assertEquals(3L, count.longValue());
     }
 
     @Test
@@ -136,8 +152,32 @@ class TimeSeriesDBTest {
     }
 
     @Test
-    void getAllFlattenedData_emptyDataMinute() {
-        List<Person> outputList = timeSeriesDB.getAllFlattenedData(LocalDate.of(2020, 1, 22).atStartOfDay(), LocalDate.of(2020, 4, 01).atStartOfDay(), DBTimeUnit.MINUTE);
+    void getAllFlattenedData_localDateTimeDataForSameHour() {
+        List<Person> outputList = timeSeriesDB.getAllFlattenedData(LocalDateTime.of(2020, 4, 5, 13, 30), LocalDateTime.of(2020, 4, 5, 13, 31), DBTimeUnit.LOCAL_DATE_TIME);
+        assertNotNull(outputList);
+        assertFalse(outputList.isEmpty());
+        assertEquals(1, outputList.size());
+    }
+
+    @Test
+    void getAllFlattenedData_localDateTimeDataForDifferentDay() {
+        List<Person> outputList = timeSeriesDB.getAllFlattenedData(LocalDateTime.of(2020, 4, 5, 13, 30, 12), LocalDateTime.of(2020, 7, 17, 14, 50, 12), DBTimeUnit.LOCAL_DATE_TIME);
+        assertNotNull(outputList);
+        assertFalse(outputList.isEmpty());
+        assertEquals(3, outputList.size());
+    }
+
+    @Test
+    void getAllFlattenedData_localDateTimeDataAtSecondLevel() {
+        List<Person> outputList = timeSeriesDB.getAllFlattenedData(LocalDateTime.of(2020, 4, 5, 13, 30, 11), LocalDateTime.of(2020, 4, 5, 13, 30, 12), DBTimeUnit.LOCAL_DATE_TIME);
+        assertNotNull(outputList);
+        assertFalse(outputList.isEmpty());
+        assertEquals(1, outputList.size());
+    }
+
+    @Test
+    void getAllFlattenedData_emptyDataAtSecondLevel() {
+        List<Person> outputList = timeSeriesDB.getAllFlattenedData(LocalDateTime.of(2020, 4, 5, 13, 30, 13), LocalDateTime.of(2020, 4, 5, 13, 30, 23), DBTimeUnit.LOCAL_DATE_TIME);
         assertNotNull(outputList);
         assertTrue(outputList.isEmpty());
     }
