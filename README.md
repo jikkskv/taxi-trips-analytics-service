@@ -2,6 +2,10 @@
 
 Test project for analytics service for Taxi trips.
 
+# Doc on Tech Decissions made
+
+Please find the file named 'TaxiTripsAnalyticsService.docx' in the root folder of the project to know more about the technical decission made.
+
 ## Requirements
 For building and running the application you need:
 
